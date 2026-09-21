@@ -35,7 +35,8 @@ node tests/smoke.mjs
 ```
 
 The smoke test drives both HTTP routes through a stub Cordis context in a temp
-directory. It covers what is easy to get wrong:
+directory, then materializes the browser half against a stub module table and a
+React stand-in. It covers what is easy to get wrong:
 
 - discovery of both skill forms (a `SKILL.md` bundle and a flat `<name>.md`),
   dot-directories skipped;
@@ -43,6 +44,12 @@ directory. It covers what is easy to get wrong:
   bytes when it goes back to the default;
 - grouping: a user-root skill is global, a project skill belongs to its project,
   and an MCP row without a project `cwd` is global;
+- the group menu: the reported project is the one pinned first, an unreported or
+  unregistered one falls back to the process project, and a toggle answer keeps
+  the same pin;
+- the panel's group behavior: only the pinned group starts expanded, a header
+  click expands its own group, a manual collapse outlives the next load, and a
+  host that flags no project leaves every group open;
 - the `disabled` patch block: the user's patch file survives byte for byte
   outside the managed fences, and re-enabling the last server restores it;
 - refusals: a path outside the scanned roots, an unknown MCP entry, an

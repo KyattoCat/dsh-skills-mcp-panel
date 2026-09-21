@@ -62,7 +62,8 @@ preset page). The page has:
 - a **search box** filtering by name, description, and path;
 - two **tabs** with live counts — skills and MCP servers;
 - **groups**, one per place a row comes from (see below), each with its own
-  header, path, and count;
+  header, path, and count — a header is a toggle that collapses and expands its
+  group;
 - one **card per row**: title, source, a colored status light, a state
   selector, and a details toggle (`+` / `−`) styled like the selector beside it;
 - a **details** panel per card, showing description / when-to-use /
@@ -76,6 +77,17 @@ preset page). The page has:
 
 Rows are grouped by the directory they belong to, so a skill you wrote for one
 project never looks like one you installed for every project.
+
+**The current project leads.** The group of the project the GUI's current session
+runs in is pinned to the top of the list, starts expanded, and carries a
+**Current project** badge. Every other group starts collapsed. Clicking a header
+collapses or expands that one group, and a choice you make sticks until the page
+is reopened — a reload from a toggle does not undo it. A GUI with no session open
+falls back to the project the `dsh web` process itself runs in, and a session in
+a workspace this deployment never registered falls back the same way, so exactly
+one project group always leads rather than none. A pinned project that has no
+skills or servers of its own has no group to render, and the first group that
+does have rows opens instead.
 
 **Skills.** Every scanned root maps to a group:
 
@@ -173,7 +185,10 @@ Two halves in one package, both plain JavaScript, no dependencies:
   and answers them behind the composition's `connection` trust fence (the
   browser session cookie plus the Host/Origin check). `GET /skills-mcp/state`
   scans the skill roots and walks the Loader for `@deepseek-ai/dsh-mcp-client`
-  rows; `POST /skills-mcp/toggle` performs the write described above.
+  rows; the browser sends the directory of its current session as `?cwd=`, which
+  is what decides the pinned group. `POST /skills-mcp/toggle` performs the write
+  described above and answers with the same full snapshot, `cwd` included in the
+  body, so a change never re-orders the page under the cursor.
 - **Browser half** (`lib/client.js`) is written directly in the client module
   system's lazy-CJS factory form
   (`window.__ModuleLoader__.load({ id, factory })`), so it needs no bundler and
