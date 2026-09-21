@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 > DeepSeek Harness, from requirements and review by the project owner.
 
 **Skills & MCP panel for the DeepSeek Harness Web GUI.** One Settings page under
-**Agent 预设** that lists every skill and every MCP server this deployment
+**Agent presets** that lists every skill and every MCP server this deployment
 composed, with a search box, a per-row status light, a state selector, and a
 details toggle.
 
@@ -56,8 +56,8 @@ dsh plugin --profile web remove dsh-skills-mcp-panel
 
 ## Use it
 
-Open **设置 → Agent 预设 → 技能/MCP** (the entry sits directly under the preset
-page). The page has:
+Open **Settings → Agent presets → Skills/MCP** (the entry sits directly under the
+preset page). The page has:
 
 - a **search box** filtering by name, description, and path;
 - two **tabs** with live counts — skills and MCP servers;
