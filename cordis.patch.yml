@@ -1,0 +1,8 @@
+# Profile layer contributed by this bundle.
+#
+# One row: the Host half that serves the panel's two routes. The browser half
+# rides the same Loader entry through the `dsh.client` declaration in
+# package.json — no second row is needed.
+- insert:
+    - id: skills-mcp-panel
+      name: dsh-skills-mcp-panel

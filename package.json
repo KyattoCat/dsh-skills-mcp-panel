@@ -1,0 +1,42 @@
+{
+  "name": "dsh-skills-mcp-panel",
+  "version": "0.1.0",
+  "description": "Skills & MCP panel for the DeepSeek Harness Web GUI: list, search, inspect and hot-toggle skills and MCP servers from Settings.",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "skills",
+    "mcp"
+  ],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "license": "MIT"
+}
