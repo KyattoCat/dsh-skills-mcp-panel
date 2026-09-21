@@ -58,27 +58,42 @@ dsh plugin --profile web add link:$PWD
 
 ## Releasing
 
-The package is published as `dsh-skills-mcp-panel`; the name belongs to this
-repository, so a release is a version bump and a publish. Nothing needs building
-first:
+A release is a tag. [`.github/workflows/release.yml`](.github/workflows/release.yml)
+checks the tag against the manifest, runs the smoke test, publishes with
+provenance, and opens a GitHub release:
 
 ```sh
 npm version patch        # or minor / major — a published version is burned
 git push --follow-tags
-npm publish
 ```
 
-Check the payload before pushing a version — `npm pack --dry-run` prints exactly
-what npm will distribute (7 files: `lib/`, `cordis.patch.yml`, both READMEs, the
-license, and `package.json`).
+It authenticates through **trusted publishing**, so the repository holds no
+`NPM_TOKEN`: npm exchanges the workflow's OIDC token for a short-lived
+credential and attaches the attestation. That trust is registered once, against
+this exact repository and workflow filename:
 
-Two things that bite:
+```sh
+npm trust github dsh-skills-mcp-panel --file release.yml --repo KyattoCat/dsh-skills-mcp-panel
+npm trust list dsh-skills-mcp-panel   # what is registered
+```
 
-- **2FA.** When the account requires a one-time password for writes,
-  `npm publish` fails with `EOTP` unless it can run the browser flow or you pass
-  `--otp=<code>`. A non-interactive shell cannot complete that flow.
-- **Provenance.** `npm publish --provenance` needs an OIDC-capable CI run, so a
-  local shell cannot produce the attestation; a tag-triggered workflow can.
+Renaming the workflow file breaks the trust, because npm matches on that
+filename — re-register it after a rename.
+
+### Publishing by hand
+
+Only when the workflow cannot run. A local `npm publish` still needs the
+account's 2FA code, and a non-interactive shell cannot complete npm's browser
+exchange, so pass the code explicitly:
+
+```sh
+npm version patch
+npm publish --otp=<code>
+```
+
+Check the payload first: `npm pack --dry-run` prints exactly what npm will
+distribute — 7 files, `lib/`, `cordis.patch.yml`, both READMEs, the license, and
+`package.json`. A local publish cannot attach provenance; only CI can.
 
 The repository is a distribution channel in its own right — a git install
 receives the same committed `lib/`, so the two routes ship identical code:

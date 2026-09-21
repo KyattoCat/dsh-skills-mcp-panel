@@ -1,0 +1,46 @@
+name: Release
+
+# Tag-driven, and tagged only: a release must be reproducible from a commit, so
+# there is no branch or manual trigger to accidentally publish from.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # create the GitHub release for the tag
+  id-token: write # the OIDC token npm exchanges for a publish credential
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # No registry-url: with trusted publishing there is no auth token to
+          # write into .npmrc, and an empty one only invites confusion.
+          node-version: 22
+
+      - name: Tag must match the manifest version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          manifest="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$manifest" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match package.json version ${manifest}"
+            exit 1
+          fi
+
+      - name: Test
+        run: node tests/smoke.mjs
+
+      # Trusted publishing: npm exchanges this workflow's OIDC token for a
+      # short-lived credential and attaches the provenance attestation, so the
+      # repository needs no NPM_TOKEN secret and nothing long-lived to rotate.
+      - name: Publish with provenance
+        run: npm publish --provenance
+
+      - name: Release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
