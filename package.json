@@ -1,6 +1,6 @@
 {
   "name": "dsh-skills-mcp-panel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Skills & MCP panel for the DeepSeek Harness Web GUI: list, search, inspect and hot-toggle skills and MCP servers from Settings.",
   "keywords": [
     "deepseek-harness",
