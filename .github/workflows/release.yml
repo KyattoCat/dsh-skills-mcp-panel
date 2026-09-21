@@ -22,6 +22,12 @@ jobs:
           # write into .npmrc, and an empty one only invites confusion.
           node-version: 22
 
+      # The npm bundled with Node 22 predates trusted publishing (npm 11.5.1)
+      # and the permission flags the registry has required since 2026-05-20, so
+      # publishing with it fails as an opaque authentication error.
+      - name: Install an npm that can do trusted publishing
+        run: npm install --global npm@11
+
       - name: Tag must match the manifest version
         run: |
           tag="${GITHUB_REF_NAME#v}"
