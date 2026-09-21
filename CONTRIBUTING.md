@@ -80,6 +80,23 @@ npm trust list dsh-skills-mcp-panel   # what is registered
 Renaming the workflow file breaks the trust, because npm matches on that
 filename — re-register it after a rename.
 
+### Verifying a release
+
+A fresh release looks missing for three separate reasons, and the registry
+document is the only authority:
+
+- The registry processes a provenance-attested publish asynchronously and says
+  so — "your package is being processed and may take a few minutes to become
+  available". `time[<version>]` shows up about two minutes after the publish
+  step prints its success line.
+- The packument is served with `Cache-Control: public, max-age=300`, so a check
+  seconds later may return the previous document. Add a cache-busting query when
+  reading it by hand: `curl "https://registry.npmjs.org/dsh-skills-mcp-panel?t=$(date +%s)"`.
+- Package managers refuse to resolve a version published moments ago — a
+  supply-chain default (`minimumReleaseAge`). `pnpm add dsh-skills-mcp-panel`
+  silently resolves the previous version instead; verify an exact new version
+  with `pnpm add dsh-skills-mcp-panel@<version> --config.minimumReleaseAge=0`.
+
 ### Publishing by hand
 
 Only when the workflow cannot run. A local `npm publish` still needs the
