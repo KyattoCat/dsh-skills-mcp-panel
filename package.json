@@ -27,6 +27,14 @@
     "README.zh.md",
     "LICENSE"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyattoCat/dsh-skills-mcp-panel.git"
+  },
+  "homepage": "https://github.com/KyattoCat/dsh-skills-mcp-panel#readme",
+  "bugs": {
+    "url": "https://github.com/KyattoCat/dsh-skills-mcp-panel/issues"
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
