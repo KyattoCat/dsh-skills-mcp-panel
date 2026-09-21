@@ -141,17 +141,7 @@ node tests/smoke.mjs   # 在临时目录里用桩 Cordis 上下文驱动两条�
 
 冒烟测试断言两件最关键的事：四种技能状态都能往返（含回到默认态时逐字节还原原始文件），以及 patch 文件在托管块之外保持字节不变。
 
-## 发布到 npm
-
-`npm publish` 可以直接用——`files` 已经把发布内容钉死，也没有需要先跑的构建步骤。这个名字目前是空的：
-
-```sh
-npm view dsh-skills-mcp-panel   # 未发布时返回 404
-npm login
-npm publish --access public
-```
-
-发布之后，[安装](#安装)里那条 `dsh plugin --profile web add dsh-skills-mcp-panel` 也就生效了。如果要改包名，`package.json` 与 `lib/client.js` 两处都要改——后者的 `__ModuleLoader__.load({ id })` 必须等于包名，客户端模块表按这个 id 匹配。
+打包规则与发版步骤写在 [CONTRIBUTING.md](CONTRIBUTING.md)——那些是维护者的事，不是给使用者的说明。
 
 ## 许可证
 

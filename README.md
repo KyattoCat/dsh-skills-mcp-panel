@@ -208,21 +208,8 @@ The smoke test asserts the two properties that matter most: disabling and
 re-enabling a skill restores the original bytes, and the same is true of the
 patch file around the managed block.
 
-## Publishing to npm
-
-`npm publish` works as-is — `files` already pins the payload and there is no
-build step to run first. The name is free as of this writing:
-
-```sh
-npm view dsh-skills-mcp-panel   # 404 while it is unpublished
-npm login
-npm publish --access public
-```
-
-After that, the bare `dsh plugin --profile web add dsh-skills-mcp-panel` route in
-[Install](#install) works too. If you rename the package, rename it in
-`package.json` **and** in `lib/client.js`, where `__ModuleLoader__.load({ id })`
-must equal the package name — the client module table matches on that id.
+Packaging rules and the release steps live in [CONTRIBUTING.md](CONTRIBUTING.md),
+because they are maintainer tasks rather than user instructions.
 
 ## License
 
