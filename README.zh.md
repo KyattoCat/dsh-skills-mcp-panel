@@ -18,15 +18,16 @@
 本包开箱即跑：`lib/` 就是真源，没有构建步骤，git 安装也不需要 `allowBuilds` 放行。
 
 ```sh
-# 从 npm 安装
-dsh plugin --profile web add dsh-skills-mcp-panel
-
-# 从 GitHub 仓库安装
-dsh plugin --profile web add github:<you>/dsh-skills-mcp-panel
+# 从 GitHub 安装——目前唯一的分发渠道
+dsh plugin --profile web add github:KyattoCat/dsh-skills-mcp-panel
 
 # 开发时从本地目录安装
 dsh plugin --profile web add link:/absolute/path/to/dsh-skills-mcp-panel
 ```
+
+尚未发布到 npm：`dsh plugin --profile web add dsh-skills-mcp-panel` 在包发布前解析不到任何东西，因为 `dsh plugin` 是把参数直接转发给 pnpm，而 registry 上没有这个名字。
+
+无论走哪条路，装下来的包只含 `lib/`、两份 README、`cordis.patch.yml` 和许可证；`tests/` 留在仓库里。
 
 之后需要重启一次 `dsh web` 进程——安装**新的 bundle 层**是实时 patch 重载唯一覆盖不了的操作，因为 `dsh.profile.bundles` 是启动时读取的。此后的每一次改变都是热的。
 
@@ -139,6 +140,18 @@ node tests/smoke.mjs   # 在临时目录里用桩 Cordis 上下文驱动两条�
 ```
 
 冒烟测试断言两件最关键的事：四种技能状态都能往返（含回到默认态时逐字节还原原始文件），以及 patch 文件在托管块之外保持字节不变。
+
+## 发布到 npm
+
+`npm publish` 可以直接用——`files` 已经把发布内容钉死，也没有需要先跑的构建步骤。这个名字目前是空的：
+
+```sh
+npm view dsh-skills-mcp-panel   # 未发布时返回 404
+npm login
+npm publish --access public
+```
+
+发布之后，[安装](#安装)里那条 `dsh plugin --profile web add dsh-skills-mcp-panel` 也就生效了。如果要改包名，`package.json` 与 `lib/client.js` 两处都要改——后者的 `__ModuleLoader__.load({ id })` 必须等于包名，客户端模块表按这个 id 匹配。
 
 ## 许可证
 

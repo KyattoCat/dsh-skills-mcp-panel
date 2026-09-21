@@ -24,15 +24,20 @@ The package ships ready to run: `lib/` is the source of truth, there is no build
 step, and a git install needs no `allowBuilds` permission.
 
 ```sh
-# from npm
-dsh plugin --profile web add dsh-skills-mcp-panel
-
-# from a GitHub checkout
-dsh plugin --profile web add github:<you>/dsh-skills-mcp-panel
+# from GitHub — the distribution channel today
+dsh plugin --profile web add github:KyattoCat/dsh-skills-mcp-panel
 
 # from a local checkout while developing
 dsh plugin --profile web add link:/absolute/path/to/dsh-skills-mcp-panel
 ```
+
+Not on npm yet: `dsh plugin --profile web add dsh-skills-mcp-panel` resolves
+nothing until the package is published, because `dsh plugin` forwards straight to
+pnpm and the registry has no such name.
+
+Whichever route you take, the installed package carries `lib/`, the two READMEs,
+`cordis.patch.yml`, and the license — and nothing else. `tests/` stays in the
+repository.
 
 Then restart the `dsh web` process once — installing a **new bundle layer** is
 the one operation the live patch reload cannot cover, because
@@ -202,6 +207,22 @@ node tests/smoke.mjs   # drives both routes through a stub Cordis context in a t
 The smoke test asserts the two properties that matter most: disabling and
 re-enabling a skill restores the original bytes, and the same is true of the
 patch file around the managed block.
+
+## Publishing to npm
+
+`npm publish` works as-is — `files` already pins the payload and there is no
+build step to run first. The name is free as of this writing:
+
+```sh
+npm view dsh-skills-mcp-panel   # 404 while it is unpublished
+npm login
+npm publish --access public
+```
+
+After that, the bare `dsh plugin --profile web add dsh-skills-mcp-panel` route in
+[Install](#install) works too. If you rename the package, rename it in
+`package.json` **and** in `lib/client.js`, where `__ModuleLoader__.load({ id })`
+must equal the package name — the client module table matches on that id.
 
 ## License
 
