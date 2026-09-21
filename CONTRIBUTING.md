@@ -58,21 +58,31 @@ dsh plugin --profile web add link:$PWD
 
 ## Releasing
 
-The npm name is free as of this writing (`npm view dsh-skills-mcp-panel` returns
-404). Nothing needs building first:
+The package is published as `dsh-skills-mcp-panel`; the name belongs to this
+repository, so a release is a version bump and a publish. Nothing needs building
+first:
 
 ```sh
-npm login
-npm publish --access public
+npm version patch        # or minor / major — a published version is burned
+git push --follow-tags
+npm publish
 ```
 
-Publishing is optional. The repository is already a working distribution
-channel, since a git install receives the same committed `lib/`:
+Check the payload before pushing a version — `npm pack --dry-run` prints exactly
+what npm will distribute (7 files: `lib/`, `cordis.patch.yml`, both READMEs, the
+license, and `package.json`).
+
+Two things that bite:
+
+- **2FA.** When the account requires a one-time password for writes,
+  `npm publish` fails with `EOTP` unless it can run the browser flow or you pass
+  `--otp=<code>`. A non-interactive shell cannot complete that flow.
+- **Provenance.** `npm publish --provenance` needs an OIDC-capable CI run, so a
+  local shell cannot produce the attestation; a tag-triggered workflow can.
+
+The repository is a distribution channel in its own right — a git install
+receives the same committed `lib/`, so the two routes ship identical code:
 
 ```sh
 dsh plugin --profile web add github:KyattoCat/dsh-skills-mcp-panel
 ```
-
-After an npm publish, `dsh plugin --profile web add dsh-skills-mcp-panel` starts
-working too — the installation section of the README should then list it as a
-third route.

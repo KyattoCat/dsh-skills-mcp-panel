@@ -24,20 +24,19 @@ The package ships ready to run: `lib/` is the source of truth, there is no build
 step, and a git install needs no `allowBuilds` permission.
 
 ```sh
-# from GitHub — the distribution channel today
+# from npm
+dsh plugin --profile web add dsh-skills-mcp-panel
+
+# from GitHub, if you would rather track the repository
 dsh plugin --profile web add github:KyattoCat/dsh-skills-mcp-panel
 
 # from a local checkout while developing
 dsh plugin --profile web add link:/absolute/path/to/dsh-skills-mcp-panel
 ```
 
-Not on npm yet: `dsh plugin --profile web add dsh-skills-mcp-panel` resolves
-nothing until the package is published, because `dsh plugin` forwards straight to
-pnpm and the registry has no such name.
-
 Whichever route you take, the installed package carries `lib/`, the two READMEs,
-`cordis.patch.yml`, and the license — and nothing else. `tests/` stays in the
-repository.
+`cordis.patch.yml`, and the license — and nothing else. `tests/` and
+`CONTRIBUTING.md` stay in the repository.
 
 Then restart the `dsh web` process once — installing a **new bundle layer** is
 the one operation the live patch reload cannot cover, because
