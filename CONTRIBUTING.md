@@ -75,6 +75,43 @@ dsh plugin --profile web add link:$PWD
 # restart dsh web once, then: Settings → Agent presets → Skills/MCP
 ```
 
+## The two writers
+
+Both halves rewrite text the user owns, and the rule in each is the same: change
+one thing, leave every other byte alone. The README states only the resulting
+promise; these are the constraints that keep it true.
+
+- **Skill frontmatter.** Only a column-zero line is a key this panel owns. An
+  indented `disable-model-invocation:` belongs to a nested mapping or to a
+  block-scalar body, and cutting it would silently delete the user's content.
+  Lines are re-emitted with the terminator they arrived with — a `\r\n` file
+  stays `\r\n` — which is why the writers work on line spans instead of
+  splitting the document and joining it back.
+- **The patch file's managed block.** The block is appended after a two-line
+  separator, and that separator is part of the span removed on the way out, so a
+  file that already ends with blank lines still round-trips byte-exactly.
+- **Reading.** `parseFields` accepts the shapes a description is actually
+  written in: `>` and `|` block scalars, quoted values, and inline comments. A
+  field is only opened by a column-zero key, so scalar content can never be
+  mistaken for one.
+
+## How it is put together
+
+Two halves in one package, both plain JavaScript and both committed:
+
+- **Host half** (`lib/index.js`) registers two exact routes on `ctx.webServer`
+  and answers them behind the composition's `connection` trust fence (the
+  browser session cookie plus the Host/Origin check). `GET /skills-mcp/state`
+  scans the skill roots and walks the Loader for `@deepseek-ai/dsh-mcp-client`
+  rows; the browser sends its current session's directory as `?cwd=`, which
+  decides the pinned group. `POST /skills-mcp/toggle` performs the write and
+  answers with the same full snapshot — `cwd` included in the body — so a change
+  never re-orders the page under the cursor.
+- **Browser half** (`lib/client.js`) is written in the client module system's
+  lazy-CJS factory form (`window.__ModuleLoader__.load({ id, factory })`), so it
+  needs no bundler and no shared build preset. It registers one
+  `settings.section` contribution and takes only `react` from the module table.
+
 ## Releasing
 
 A release is a tag. [`.github/workflows/release.yml`](.github/workflows/release.yml)

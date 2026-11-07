@@ -137,10 +137,7 @@ default, so a state that needs it REMOVES the key instead of writing a
 redundant value: **Enabled** writes neither key, **Manual only** writes
 `disable-model-invocation: true`, **Model only** writes `user-invocable: false`,
 and **Disabled** writes both. A skill taken away from its default state and put
-back therefore returns to its original bytes — line endings included, so a file
-written on Windows stays CRLF — and an unrelated key never moves. Only a
-top-level key is this panel's to touch: an indented `disable-model-invocation:`
-belongs to a nested mapping or a block scalar and is left alone.
+back therefore returns to its original bytes, and an unrelated key never moves.
 
 **MCP servers.** The panel owns one marked block at the end of the profile's
 `cordis.patch.yml`:
@@ -153,12 +150,9 @@ belongs to a nested mapping or a block scalar and is left alone.
 ```
 
 Everything outside those two fences is preserved byte for byte — comments,
-formatting, line endings, and your own rows included. The block is rewritten
-wholesale on every change, so it always lists exactly the servers currently
-disabled by the panel; re-enabling the last one removes the block, the separator
-it was appended after, and nothing else, so the file returns to its original
-bytes. The write goes through a temp file and a rename, so the patch
-watcher never sees a half-written document.
+formatting, and your own rows included. The block always lists exactly the
+servers currently disabled by the panel; re-enabling the last one removes the
+block and the file returns to its original bytes.
 
 ## Configuration
 
@@ -182,23 +176,11 @@ All fields are optional; the defaults are what a stock `dsh web` needs.
       - /home/me/team-skills
 ```
 
-## How it works
+## Footprint
 
-Two halves in one package, both plain JavaScript, no dependencies:
-
-- **Host half** (`lib/index.js`) registers two exact routes on `ctx.webServer`
-  and answers them behind the composition's `connection` trust fence (the
-  browser session cookie plus the Host/Origin check). `GET /skills-mcp/state`
-  scans the skill roots and walks the Loader for `@deepseek-ai/dsh-mcp-client`
-  rows; the browser sends the directory of its current session as `?cwd=`, which
-  is what decides the pinned group. `POST /skills-mcp/toggle` performs the write
-  described above and answers with the same full snapshot, `cwd` included in the
-  body, so a change never re-orders the page under the cursor.
-- **Browser half** (`lib/client.js`) is written directly in the client module
-  system's lazy-CJS factory form
-  (`window.__ModuleLoader__.load({ id, factory })`), so it needs no bundler and
-  no shared build preset. It registers one `settings.section` contribution and
-  takes only `react` from the module table.
+No dependencies, no install-time script, no port and no credential of its own:
+the panel answers through the GUI's own server and session check, and nothing it
+shows you is cached.
 
 ## Known limitations
 
