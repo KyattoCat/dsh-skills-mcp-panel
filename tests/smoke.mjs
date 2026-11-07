@@ -345,9 +345,11 @@ const clientHalf = clientEntry.factory((specifier) => {
 
 let contribution = null
 let Section = null
+/** Services the browser half reads at request time; a test fills in `sessions`. */
+const clientServices = {}
 clientHalf.apply({
   effect: (factory) => { factory() },
-  get: () => undefined,
+  get: (name) => clientServices[name],
   locale: { register: () => {}, bind: () => (key) => key },
   slots: {
     inject: (_name, callback) => { callback() },
@@ -501,6 +503,38 @@ source.set({ ...source.getSnapshot(), skills: [skillRow('kept', 'global')], pend
 await injected.poll()
 assert.equal(source.getSnapshot().skills.length, 1, 'a poll is skipped while a write is pending')
 assert.equal(source.getSnapshot().pending, 'skill:/roots/x.md', 'the pending write is untouched')
+
+// The request names the directory of the Session the main view holds, so the
+// host pins that project. The list snapshot has no `current` field — a lookup
+// by that name answered undefined and the panel silently pinned the process's
+// own project instead.
+let requestedUrl = null
+globalThis.fetch = async (url) => {
+  requestedUrl = String(url)
+  return { ok: true, status: 200, json: async () => ({ skills: [], mcp: [], groups: [], roots: [], profile: null }) }
+}
+clientServices.sessions = {
+  list: {
+    getSnapshot: () => ({
+      ids: ['s1', 's2'],
+      byId: {
+        s1: { id: 's1', cwd: 'C:\\work\\project-a', retainedBy: { mainView: 1 } },
+        s2: { id: 's2', cwd: 'C:\\work\\project-b', retainedBy: {} },
+      },
+      phase: 'ready',
+    }),
+  },
+}
+await injected.load()
+assert.ok(requestedUrl.includes(`?cwd=${encodeURIComponent('C:\\work\\project-a')}`),
+  'the open Session supplies the pinned project')
+assert.equal(requestedUrl.includes('project-b'), false,
+  'a Session the main view does not hold does not pin')
+
+// No open Session: no hint is sent, and the host falls back to its own project.
+delete clientServices.sessions
+await injected.load()
+assert.equal(requestedUrl.includes('cwd='), false, 'no open Session sends no hint')
 
 // The mount wires the automatic refresh and unmounts cleanly: the cadence comes
 // from the payload, a hidden tab costs nothing, and 0 means no timer at all.
