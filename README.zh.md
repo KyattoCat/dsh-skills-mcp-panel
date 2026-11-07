@@ -6,6 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/dsh-skills-mcp-panel)](https://www.npmjs.com/package/dsh-skills-mcp-panel)
 [![npm downloads](https://img.shields.io/npm/dt/dsh-skills-mcp-panel)](https://www.npmjs.com/package/dsh-skills-mcp-panel)
 [![CI](https://github.com/KyattoCat/dsh-skills-mcp-panel/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/KyattoCat/dsh-skills-mcp-panel/actions/workflows/ci.yml?query=branch%3Amain)
+[![license](https://img.shields.io/npm/l/dsh-skills-mcp-panel)](LICENSE)
 [![Socket Badge](https://badge.socket.dev/npm/package/dsh-skills-mcp-panel)](https://socket.dev/npm/package/dsh-skills-mcp-panel)
 
 > **本项目由 DeepSeek Flash 生成。** 这里每一个文件——插件的两个半边、测试、以及本文档——都由运行在 DeepSeek Harness 中的该模型编写，需求与评审来自项目所有者。
