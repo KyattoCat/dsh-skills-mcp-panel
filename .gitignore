@@ -3,3 +3,6 @@ node_modules/
 *.log
 .DS_Store
 *.tgz
+# Workspace-local harness state: this repo is also a dsh workspace, and the
+# skills under here are per-checkout scratch, never part of the package.
+.dsh/
