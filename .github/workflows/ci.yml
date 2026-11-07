@@ -1,0 +1,30 @@
+name: CI
+
+# Every push and every pull request, not just a tag: the release workflow is
+# the last place a regression should be discovered.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    name: smoke (${{ matrix.os }}, node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is not optional here: the text surgery reads and writes line
+        # endings, and the grouping code compares paths case-insensitively.
+        os: [ubuntu-latest, windows-latest]
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      # No install step: the package has no dependencies and no build, so the
+      # test runs straight out of the checkout.
+      - run: node tests/smoke.mjs
