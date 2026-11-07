@@ -60,7 +60,11 @@ React stand-in. It covers what is easy to get wrong:
   block's content nor a nested `disable-model-invocation:` is touched by a
   write;
 - the client state machine: a rejected write is recorded as a save failure and
-  leaves the page's status alone, and a reload clears a past "restart" note.
+  leaves the page's status alone, and a reload clears a past "restart" note;
+- the automatic refresh: a quiet poll adopts rows added elsewhere without
+  clearing that note, is skipped while a write is pending, stays silent when it
+  fails, and schedules its timer from the cadence the payload carried (`0`
+  schedules nothing).
 
 CI runs this same file on Ubuntu and Windows, Node 22 and 24 — see
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml). Windows is in the matrix

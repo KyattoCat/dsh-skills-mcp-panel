@@ -74,6 +74,11 @@ preset page). The page has:
 - no standing footer: the page adds a message only when a change lands on a
   profile that will not act on it until the next `dsh` start.
 
+**It keeps itself current.** The page re-reads while it stays open, and again
+when you come back to it, so a skill or server added from somewhere else shows
+up without pressing refresh. The refresh button is still there for a deliberate
+re-read; how often the automatic one runs is the `refreshInterval` setting.
+
 ### Groups
 
 Rows are grouped by the directory they belong to, so a skill you wrote for one
@@ -166,6 +171,7 @@ All fields are optional; the defaults are what a stock `dsh web` needs.
 | `projectRoot` | `process.cwd()` | The harness process's own project; its `.dsh/skills` and `.agents/skills` are scanned alongside every workspace the deployment knows. |
 | `skillRoots` | `[]` | Extra skill roots, each forming its own group. |
 | `maxSkillProjects` | `64` | Ceiling on how many workspaces one scan covers; project roots are sorted before the cap applies. |
+| `refreshInterval` | `5000` | How often the open page re-reads itself, in milliseconds. `0` turns the automatic refresh off and leaves only the button. |
 
 ```yaml
 - id: skills-mcp-panel

@@ -162,6 +162,7 @@ assert.equal(state.payload.mcp[0].tools, 2, 'tools counted by server prefix')
 assert.equal(state.payload.mcp[0].groupId, 'global', 'a server without a project cwd is global')
 assert.equal(state.payload.profile.patchPath, patchPath)
 assert.equal(state.payload.profile.patchReload, 'live')
+assert.equal(state.payload.refreshInterval, 5000, 'the default cadence reaches the page')
 
 const skillId = state.payload.skills.find(row => row.name === 'demo-skill').id
 const policyOf = async () => {
@@ -308,6 +309,9 @@ await rm(root, { recursive: true, force: true })
 /** Hook slots, addressed by call index: the component's hook order is fixed. */
 const hooks = { slots: [], index: 0 }
 
+/** Effects captured per render, so the mount's timer wiring can be exercised. */
+const effects = []
+
 const React = {
   createElement: (type, props, ...children) => ({ type, props: props ?? {}, children: children.flat(Infinity) }),
   useState: (initial) => {
@@ -317,8 +321,9 @@ const React = {
       hooks.slots[index] = typeof next === 'function' ? next(hooks.slots[index]) : next
     }]
   },
-  // The panel loads through an effect; the test seeds the source instead.
-  useEffect: () => {},
+  // The panel loads through an effect; the tests seed the source instead and
+  // run the captured effects only where a test is about that wiring.
+  useEffect: (fn) => { effects.push(fn) },
 }
 
 const registered = new Map()
@@ -471,5 +476,74 @@ assert.equal(source.getSnapshot().writeError, null, 'a successful write clears t
 globalThis.fetch = fetchOk({ skills: [], mcp: [], groups: [], roots: [], profile: null })
 await injected.load()
 assert.equal(source.getSnapshot().notice, null, 'a reload clears a note about an action already taken')
+
+// The panel re-reads itself while it stays open: a poll adopts what appeared
+// elsewhere, keeps the notes on screen, and stays silent when it fails.
+globalThis.fetch = fetchOk({ skills: [skillRow('fresh', 'global')], mcp: [], groups, roots: [], profile: null, refreshInterval: 5000 })
+source.set({ ...source.getSnapshot(), status: 'ready', skills: [], notice: 'restartHint', writeError: null, pending: null })
+await injected.poll()
+assert.equal(source.getSnapshot().skills.length, 1, 'a poll adopts a row added elsewhere')
+assert.equal(source.getSnapshot().notice, 'restartHint', 'a poll keeps the restart note')
+
+globalThis.fetch = async () => { throw new Error('blip') }
+await injected.poll()
+assert.equal(source.getSnapshot().status, 'ready', 'a failed poll leaves the page alone')
+
+source.set({ ...source.getSnapshot(), status: 'error', error: 'stale failure', pending: null })
+globalThis.fetch = fetchOk({ skills: [], mcp: [], groups, roots: [], profile: null })
+await injected.poll()
+assert.equal(source.getSnapshot().status, 'ready', 'a poll heals a stale error instead of waiting for a click')
+
+// A poll never answers while a write is in flight: that answer would be older
+// than the change the user just made.
+globalThis.fetch = fetchOk({ skills: [], mcp: [], groups, roots: [], profile: null })
+source.set({ ...source.getSnapshot(), skills: [skillRow('kept', 'global')], pending: 'skill:/roots/x.md' })
+await injected.poll()
+assert.equal(source.getSnapshot().skills.length, 1, 'a poll is skipped while a write is pending')
+assert.equal(source.getSnapshot().pending, 'skill:/roots/x.md', 'the pending write is untouched')
+
+// The mount wires the automatic refresh and unmounts cleanly: the cadence comes
+// from the payload, a hidden tab costs nothing, and 0 means no timer at all.
+const timers = []
+const listeners = []
+const removed = []
+const realSetInterval = globalThis.setInterval
+const realClearInterval = globalThis.clearInterval
+globalThis.setInterval = (fn, ms) => {
+  timers.push({ fn, ms, cleared: false })
+  return timers.length - 1
+}
+globalThis.clearInterval = (id) => { timers[id].cleared = true }
+document.visibilityState = 'visible'
+document.addEventListener = (type, fn) => { listeners.push({ type, fn }) }
+document.removeEventListener = (type) => { removed.push(type) }
+window.addEventListener = (type, fn) => { listeners.push({ type, fn }) }
+window.removeEventListener = (type) => { removed.push(type) }
+
+const liveSnapshot = {
+  ...stateWith([{ id: 'global', kind: 'global', path: null, current: true }]),
+  refreshInterval: 5000,
+}
+hooks.slots = []
+effects.length = 0
+render(liveSnapshot)
+const pollEffect = effects[effects.length - 1]
+assert.equal(timers.length, 0, 'nothing is scheduled before the effect runs')
+const cleanup = pollEffect()
+assert.equal(timers.length, 1, 'the mount starts exactly one timer')
+assert.equal(timers[0].ms, 5000, 'the timer uses the cadence the payload carried')
+assert.deepEqual(listeners.map(listener => listener.type).sort(), ['focus', 'visibilitychange'],
+  'a returning focus refreshes too')
+cleanup()
+assert.equal(timers[0].cleared, true, 'unmounting clears the timer')
+assert.equal(removed.length, 2, 'unmounting removes both listeners')
+
+effects.length = 0
+render({ ...liveSnapshot, refreshInterval: 0 })
+assert.equal(timers.length, 1, 'a zero cadence schedules nothing')
+assert.equal(effects[effects.length - 1](), undefined, 'a zero cadence returns no cleanup')
+
+globalThis.setInterval = realSetInterval
+globalThis.clearInterval = realClearInterval
 
 console.log('smoke: all assertions passed')
