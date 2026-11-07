@@ -225,6 +225,75 @@ assert.equal(badMcp.status, 409, 'an unknown MCP entry is refused')
 const wrongMethod = await call('/skills-mcp/state', 'POST', {})
 assert.equal(wrongMethod.status, 405)
 
+// ---------------------------------------------------------------------------
+// Text surgery on the shapes a real file actually takes: CRLF line endings, a
+// YAML block scalar, a nested mapping that reuses one of the owned key names,
+// and a patch file whose tail is blank lines.
+// ---------------------------------------------------------------------------
+
+/** Lines joined the way a Windows-authored file joins them. */
+const crlf = (...rows) => rows.join('\r\n')
+
+const crlfPath = join(dshHome, 'skills', 'crlf-skill', 'SKILL.md')
+await mkdir(join(dshHome, 'skills', 'crlf-skill'), { recursive: true })
+const CRLF_SKILL = crlf('---', 'name: crlf-skill', 'description: Written on Windows.', '---', '', 'Body.', '')
+await writeFile(crlfPath, CRLF_SKILL, 'utf8')
+
+await call('/skills-mcp/toggle', 'POST', { kind: 'skill', id: crlfPath, model: false, user: true })
+const crlfOff = await readFile(crlfPath, 'utf8')
+assert.ok(crlfOff.includes('disable-model-invocation: true'), 'a CRLF skill takes the write')
+assert.equal(/[^\r]\n/.test(crlfOff), false, 'no line ending is normalized to LF')
+await call('/skills-mcp/toggle', 'POST', { kind: 'skill', id: crlfPath, model: true, user: true })
+assert.equal(await readFile(crlfPath, 'utf8'), CRLF_SKILL, 'a CRLF skill returns to its exact original bytes')
+
+const yamlDir = join(dshHome, 'skills', 'yaml-skill')
+await mkdir(yamlDir, { recursive: true })
+const YAML_SKILL = `---
+name: yaml-skill
+description: >
+  A folded description
+  over two lines.
+metadata:
+  disable-model-invocation: true
+  owner: me
+notes: |
+  line one
+  line two
+---
+Body.
+`
+await writeFile(join(yamlDir, 'SKILL.md'), YAML_SKILL, 'utf8')
+
+const yamlRow = (await call('/skills-mcp/state', 'GET')).payload.skills.find(row => row.name === 'yaml-skill')
+assert.equal(yamlRow.description, 'A folded description over two lines.', 'a folded scalar reads as its text')
+assert.equal(yamlRow.modelInvocable, true, 'a nested key is not the top-level bit this panel owns')
+
+await call('/skills-mcp/toggle', 'POST', { kind: 'skill', id: yamlRow.id, model: false, user: true })
+const yamlAfter = await readFile(yamlRow.id, 'utf8')
+assert.ok(yamlAfter.includes('  disable-model-invocation: true'), 'a same-named nested key survives the write')
+assert.ok(yamlAfter.includes('  line two'), 'block-scalar content survives the write')
+await call('/skills-mcp/toggle', 'POST', { kind: 'skill', id: yamlRow.id, model: true, user: true })
+assert.equal(await readFile(yamlRow.id, 'utf8'), YAML_SKILL, 'a skill with block scalars returns to its exact original bytes')
+
+const CRLF_PATCH = crlf(
+  '# Your patch layer for this dsh profile.',
+  '- insert:',
+  '    - id: mcp-playwright',
+  "      name: '@deepseek-ai/dsh-mcp-client'",
+  '      config:',
+  '        serverName: playwright',
+  '',
+  '',
+)
+await writeFile(patchPath, CRLF_PATCH, 'utf8')
+await call('/skills-mcp/toggle', 'POST', { kind: 'mcp', id: 'mcp-playwright', enabled: false })
+const crlfPatchOff = await readFile(patchPath, 'utf8')
+assert.ok(crlfPatchOff.startsWith(CRLF_PATCH), 'the user patch file, trailing blanks included, is preserved')
+assert.ok(crlfPatchOff.includes('- id: "mcp-playwright"\r\n  disabled: true'), 'the managed block uses the file\'s own line endings')
+assert.equal(/[^\r]\n/.test(crlfPatchOff), false, 'no line ending in the patch file is normalized')
+await call('/skills-mcp/toggle', 'POST', { kind: 'mcp', id: 'mcp-playwright', enabled: true })
+assert.equal(await readFile(patchPath, 'utf8'), CRLF_PATCH, 'a CRLF patch file returns to its exact original bytes')
+
 await rm(root, { recursive: true, force: true })
 
 // ---------------------------------------------------------------------------
@@ -373,5 +442,34 @@ tree = render(stateWith(groups, groups.filter(group => group.id !== `project:${o
 assert.deepEqual(nodesWhere(tree, node => node.type === 'section').map(node => node.props.key),
   ['global', `project:${projectRoot}`], 'a group with no rows is still dropped')
 assert.deepEqual(expandedOf(tree), [true, false], 'the first rendered group opens when the pinned one is absent')
+
+// ---------------------------------------------------------------------------
+// A rejected WRITE is reported as a write, not as a failed read — and the
+// "restart needed" note is cleared by the next load rather than outliving the
+// action it describes.
+// ---------------------------------------------------------------------------
+
+/** A fetch stand-in that answers one payload. */
+const fetchOk = (payload) => async () => ({ ok: true, status: 200, json: async () => payload })
+
+hooks.slots = []
+globalThis.fetch = async () => { throw new Error('disk says no') }
+await injected.toggle('skill', '/roots/x.md', { model: false, user: true })
+const failedWrite = source.getSnapshot()
+assert.equal(failedWrite.writeError, 'disk says no', 'a rejected write is recorded as a write failure')
+assert.notEqual(failedWrite.status, 'error', 'a rejected write does not relabel the page as a failed read')
+
+tree = render(failedWrite)
+assert.equal(nodesWhere(tree, node => node.props?.className === 'dsm-banner is-error'
+  && String(node.children[0]).startsWith('writeFailed')).length, 1, 'the page says the save failed')
+
+globalThis.fetch = fetchOk({ ok: true, applied: 'restart', skills: [], mcp: [], groups: [], roots: [], profile: null })
+await injected.toggle('mcp', 'entry', { enabled: false })
+assert.equal(source.getSnapshot().notice, 'restartHint', 'a startup-frozen profile raises the restart note')
+assert.equal(source.getSnapshot().writeError, null, 'a successful write clears the previous failure')
+
+globalThis.fetch = fetchOk({ skills: [], mcp: [], groups: [], roots: [], profile: null })
+await injected.load()
+assert.equal(source.getSnapshot().notice, null, 'a reload clears a note about an action already taken')
 
 console.log('smoke: all assertions passed')

@@ -53,7 +53,19 @@ React stand-in. It covers what is easy to get wrong:
 - the `disabled` patch block: the user's patch file survives byte for byte
   outside the managed fences, and re-enabling the last server restores it;
 - refusals: a path outside the scanned roots, an unknown MCP entry, an
-  incomplete skill request, and a wrong HTTP method.
+  incomplete skill request, and a wrong HTTP method;
+- byte fidelity on the shapes a real file takes: a CRLF skill file and a CRLF
+  patch file whose tail is blank lines both round-trip exactly;
+- a folded (`>`) description reads as its text, and neither a literal (`|`)
+  block's content nor a nested `disable-model-invocation:` is touched by a
+  write;
+- the client state machine: a rejected write is recorded as a save failure and
+  leaves the page's status alone, and a reload clears a past "restart" note.
+
+CI runs this same file on Ubuntu and Windows, Node 22 and 24 — see
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml). Windows is in the matrix
+because line endings and path comparison are platform facts this plugin writes
+about, and a Linux-only run cannot see either of them.
 
 To exercise it against a live harness, install the checkout into a profile and
 open the panel:
