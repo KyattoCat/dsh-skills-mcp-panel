@@ -14,6 +14,10 @@ English | [中文](README.zh.md)
 composed, with a search box, a per-row status light, a state selector, and a
 details toggle.
 
+![The Skills & MCP panel: a search box, skill and MCP counts, the current
+project's group expanded with one row per invocation state, and the other groups
+collapsed](https://raw.githubusercontent.com/KyattoCat/dsh-skills-mcp-panel/main/docs/panel.en.png)
+
 Both kinds change **without restarting the process**:
 
 | | What the selector writes | When it lands |

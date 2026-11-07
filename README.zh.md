@@ -9,6 +9,8 @@
 
 **DeepSeek Harness Web GUI 的「技能与 MCP」面板。** 在设置页的「Agent 预设」下新增一个分页，列出本部署已组合的每一个技能和每一个 MCP 服务器，并带有搜索框、每行状态灯、状态选择器，以及展开详情的箭头。
 
+![技能与 MCP 面板：搜索框与技能/MCP 计数，当前项目所在分组展开着四种调用状态各一行，其余分组折叠](https://raw.githubusercontent.com/KyattoCat/dsh-skills-mcp-panel/main/docs/panel.zh.png)
+
 两类条目都是**不重启进程**即可改变：
 
 | | 选择器写入了什么 | 何时生效 |
